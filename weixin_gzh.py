@@ -8,20 +8,7 @@ url = 'https://mp.weixin.qq.com/cgi-bin/searchbiz?action=search_biz&token=147887
 
 headers = {
 	'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
-	'Cookie': 'tvfe_boss_uuid=7643641b94938155; _qpsvr_localtk=0.037841212154183346; '
-	'RK=lYvDWWLbea;'
-	'pgv_pvid=8407970835; o_cookie=364585454; ptisp=cnc; '
-	'ptcz=a46f914fac24790fe3289d6048820cc33852016f4628bdd510bfd98e4a858d24; '
-	'wxtokenkey=777; FTN5K=d59e185b; pt2gguin=o0364585454; uin=o0364585454; '
-	'OUTFOX_SEARCH_USER_ID_NCOO=1865991911.1785605; skey=@X9agDQb3e; '
-	'ua_id=NQSZvMPrUsQGYbJcAAAAAK3iV6nHgMyWm7j1tS3eYzY=; mm_lang=zh_CN; '
-	'uuid=0f6da54430eee39e175815c1e1dd2a68; ticket=97b3d3444c221a42848e3677696ddbeab93c2c62; '
-	'ticket_id=gh_ca33a0b13059; cert=PKP89M8WQHkLeceIW1GDwxTGTOAKnmS1; noticeLoginFlag=1; '
-	'data_bizuin=3071856695; bizuin=3000536892; '
-	'data_ticket=5x0psWcOeIlBW1AjhN6YQBt67mE9/KwgxzXG8AuEYZyYbxNBne8deWmeMXiIJXrI; '
-	'slave_sid=VF91MEpENGhSbm40NEQ3WlRIMFJ2V2RtQnhXaUd6X1c0RTkzY2Vrdlc5N0JhNTNsRkxNSHdy'
-	'dzVRZlR1cnowbENwZXhtNllxa0N3Zk1iRzhEQXJJWkNBeHh4dkFmelppUkY3VnBwUDlOQnBvYkVNUlB4Zz'
-	'ZJYnlxZ1FBdHd6UmRJWUEyM2VuYjJCQ2tab2po; slave_user=gh_ca33a0b13059',
+	'Cookie': 'your cookie', # 登陆获取cookie
 	'Host': 'mp.weixin.qq.com',
 	'Referer': 'https://mp.weixin.qq.com/cgi-bin/appmsg?t=media/appmsg_edit_v2&action=edit&isNew=1&type=10&token=1478878797&lang=zh_CN',
 }
@@ -46,6 +33,7 @@ s.headers.update(headers)
 """
 
 j = r.json()
+pprint(j)
 
 c_url = 'https://mp.weixin.qq.com/cgi-bin/appmsg?token=1478878797&lang=zh_CN&f=json' \
         '&ajax=1&random=0.5601484271148798&action=list_ex&begin=0&count=5&query=&fakeid={}&type=9'
