@@ -53,18 +53,19 @@ class WeixinSpider(object):
         next_page = html.xpath('//a[@id="sogou_next"]')
         if next_page:
             next_page = self.base_url + str(next_page[0].xpath('@href')[0])
-            weixin_request = WeixinRequest(url=next_page, callback=self.parse_index, need_proxy=True)
+            weixin_request = WeixinRequest(url=next_page, callback=self.parse_index, need_proxy=False)
             yield weixin_request
 
     def parse_detail(self, response):
         html = etree.HTML(response.text)
         all_p = html.xpath('//div[@class="rich_media_content "]//p')
+        wechat = html.xpath('//div[@class="profile_inner"]/p[1]/span/text()')
         data = {
             'title': html.xpath('//h2[@id="activity-name"]/text()')[0].strip(),
             'content': '\n'.join([' '.join(i.xpath('.//text()')) for i in all_p]),
             'date': html.xpath('//em[@id="publish_time"]/text()')[0],
             'nickname': html.xpath('//strong[@class="profile_nickname"]/text()')[0],
-            'wechat': html.xpath('//div[@class="profile_inner"]/p[1]/span/text()')[0]
+            'wechat': wechat[0] if wechat else ''
         }
         print(data)
         yield data
