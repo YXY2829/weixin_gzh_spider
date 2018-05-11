@@ -1,3 +1,5 @@
+import requests
+import random
 from requests import Session, Request
 from requests import ReadTimeout, ConnectionError
 from urllib.parse import urlencode
@@ -7,11 +9,12 @@ from pymongo import MongoClient
 
 
 class WeixinRequest(Request):
-    def __init__(self, url, callback, method='GET', headers=None, fail_time=0, timeout=5):
+    def __init__(self, url, callback, method='GET', headers=None, fail_time=0, timeout=5, need_proxy=False):
         Request.__init__(self, method, url, headers)
         self.callback = callback
         self.fail_time = fail_time
         self.timeout = timeout
+        self.need_proxy = need_proxy
 
 class WeixinSpider(object):
     base_url = 'http://weixin.sogou.com/weixin'
@@ -50,7 +53,7 @@ class WeixinSpider(object):
         next_page = html.xpath('//a[@id="sogou_next"]')
         if next_page:
             next_page = self.base_url + str(next_page[0].xpath('@href')[0])
-            weixin_request = WeixinRequest(url=next_page, callback=self.parse_index)
+            weixin_request = WeixinRequest(url=next_page, callback=self.parse_index, need_proxy=True)
             yield weixin_request
 
     def parse_detail(self, response):
@@ -68,6 +71,16 @@ class WeixinSpider(object):
 
     def request(self, weixin_request):
         try:
+            if weixin_request.need_proxy:
+                r = requests.get('http://127.0.0.1:5000/get/10')
+                data = r.json()
+                proxy = random.choice(data['data'])
+                proxies = {
+                    'http': 'http://' + proxy,
+                    'https': 'https://' + proxy
+                }
+                return self.session.send(weixin_request.prepare(), timeout=weixin_request.timeout,
+                                         allow_redirects=True, proxies=proxies)
             return self.session.send(weixin_request.prepare(), timeout=weixin_request.timeout, allow_redirects=True)
         except (ConnectionError, ReadTimeout) as e:
             print(e.args)
@@ -76,7 +89,7 @@ class WeixinSpider(object):
     def error(self, weixin_request):
         weixin_request.fail_time = weixin_request.fail_time + 1
         print('Request Failed', weixin_request.fail_time, 'Times', weixin_request.url)
-        if weixin_request.fail_time < 3:
+        if weixin_request.fail_time < 5:
             self.q.put(weixin_request)
 
     def schedule(self):
