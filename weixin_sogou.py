@@ -72,6 +72,7 @@ class WeixinSpider(object):
     def request(self, weixin_request):
         try:
             if weixin_request.need_proxy:
+                # 使用proxy_pool的代理ip
                 r = requests.get('http://127.0.0.1:5000/get/10')
                 data = r.json()
                 proxy = random.choice(data['data'])
