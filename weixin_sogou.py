@@ -3,16 +3,13 @@ from requests import ReadTimeout, ConnectionError
 from urllib.parse import urlencode
 from queue import Queue
 from lxml import etree
+from pymongo import MongoClient
 
-config = {
-    'timeout': 5,
-}
 
 class WeixinRequest(Request):
-    def __init__(self, url, callback, method='GET', headers=None, need_proxy=False, fail_time=0, timeout=config['timeout']):
+    def __init__(self, url, callback, method='GET', headers=None, fail_time=0, timeout=5):
         Request.__init__(self, method, url, headers)
         self.callback = callback
-        self.need_proxy = need_proxy
         self.fail_time = fail_time
         self.timeout = timeout
 
@@ -32,6 +29,8 @@ class WeixinSpider(object):
     }
     session = Session()
     q = Queue()
+    client = MongoClient('localhost', 27017)
+    db = client.weixin_sogou_db
 
     def start(self):
         self.session.headers.update(self.headers)
@@ -44,12 +43,14 @@ class WeixinSpider(object):
         items = html.xpath('//ul[@class="news-list"]/li//h3/a')
         for item in items:
             url = item.xpath('@href')[0]
+            print(url)
+            print('-'*30)
             weixin_request = WeixinRequest(url=url, callback=self.parse_detail)
             yield weixin_request
         next_page = html.xpath('//a[@id="sogou_next"]')
         if next_page:
             next_page = self.base_url + str(next_page[0].xpath('@href')[0])
-            weixin_request = WeixinRequest(url=next_page, callback=self.parse_index, need_proxy=True)
+            weixin_request = WeixinRequest(url=next_page, callback=self.parse_index)
             yield weixin_request
 
     def parse_detail(self, response):
@@ -62,30 +63,23 @@ class WeixinSpider(object):
             'nickname': html.xpath('//strong[@class="profile_nickname"]/text()')[0],
             'wechat': html.xpath('//div[@class="profile_inner"]/p[1]/span/text()')[0]
         }
+        print(data)
+        yield data
 
     def request(self, weixin_request):
         try:
-            return self.session.send(weixin_request.prepare(), timeout=weixin_request.timeout, allow_redirects=False)
+            return self.session.send(weixin_request.prepare(), timeout=weixin_request.timeout, allow_redirects=True)
         except (ConnectionError, ReadTimeout) as e:
             print(e.args)
             return False
 
     def error(self, weixin_request):
-        """
-        错误处理
-        :param weixin_request: 请求
-        :return:
-        """
         weixin_request.fail_time = weixin_request.fail_time + 1
         print('Request Failed', weixin_request.fail_time, 'Times', weixin_request.url)
         if weixin_request.fail_time < 3:
             self.q.put(weixin_request)
 
     def schedule(self):
-        """
-        调度请求
-        :return:
-        """
         while not self.q.empty():
             weixin_request = self.q.get()
             callback = weixin_request.callback
@@ -99,6 +93,8 @@ class WeixinSpider(object):
                         if isinstance(result, WeixinRequest):
                             self.q.put(result)
                         if isinstance(result, dict):
+                            collection = self.db['articles']
+                            collection.insert_one(result)
                             print('articles', result, '\n','-'*30)
                 else:
                     self.error(weixin_request)
